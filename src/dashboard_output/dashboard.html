@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARS Training Dashboard — CarDD</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0f1117;
+            --bg-card: #1a1d27;
+            --bg-card-hover: #21242f;
+            --border: #2a2d3a;
+            --text-primary: #e4e6f0;
+            --text-secondary: #8b8fa3;
+            --text-muted: #565a6e;
+            --accent-blue: #4e8cff;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --accent-amber: #fbbf24;
+            --accent-purple: #a78bfa;
+            --accent-cyan: #22d3ee;
+            --glow-blue: rgba(78, 140, 255, 0.15);
+            --glow-green: rgba(52, 211, 153, 0.15);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, rgba(78,140,255,0.08), rgba(167,139,250,0.08));
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header .status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(52,211,153,0); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        /* Metric cards row */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .metric-card:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
+
+        .metric-card .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-card .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .metric-card .sub {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .value.blue { color: var(--accent-blue); }
+        .value.green { color: var(--accent-green); }
+        .value.red { color: var(--accent-red); }
+        .value.amber { color: var(--accent-amber); }
+        .value.purple { color: var(--accent-purple); }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+        }
+
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 280px;
+        }
+
+        /* Comparison section */
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title .badge {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 99px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .comparisons-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .comparison-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .comparison-card:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px var(--glow-blue);
+        }
+
+        .comparison-card .card-header {
+            padding: 0.75rem 1.25rem;
+            background: rgba(78,140,255,0.05);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .comparison-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .no-data .icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Legend for comparison */
+        .legend-bar {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .metrics-row { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 MARS Training Dashboard — CarDD</h1>
+        <div class="status">
+            <div class="dot" id="statusDot"></div>
+            <span id="statusText">Connecting...</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Metric cards -->
+        <div class="metrics-row" id="metricsRow">
+            <div class="metric-card">
+                <div class="label">Current Epoch</div>
+                <div class="value blue" id="metricEpoch">—</div>
+                <div class="sub" id="metricEpochSub"></div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Train Loss</div>
+                <div class="value amber" id="metricTrainLoss">—</div>
+                <div class="sub" id="metricTrainDelta"></div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Val Loss</div>
+                <div class="value green" id="metricValLoss">—</div>
+                <div class="sub" id="metricValDelta"></div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Best Loss</div>
+                <div class="value purple" id="metricBestLoss">—</div>
+                <div class="sub" id="metricBestEpoch"></div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Learning Rate</div>
+                <div class="value blue" id="metricLR">—</div>
+                <div class="sub">Current LR</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>📉 Training & Validation Loss</h3>
+                <div class="chart-wrapper">
+                    <canvas id="lossChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>🔧 Component Losses</h3>
+                <div class="chart-wrapper">
+                    <canvas id="componentChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparisons -->
+        <div class="section-title">
+            🔍 Ground Truth vs Predictions
+            <span class="badge" id="compEpochBadge">Waiting...</span>
+        </div>
+
+        <div class="legend-bar">
+            <div class="legend-item"><div class="legend-dot" style="background:#4e8cff;"></div> Left: Ground Truth</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#34d399;"></div> Right: Predictions</div>
+        </div>
+
+        <div class="comparisons-grid" id="comparisonsGrid">
+            <div class="no-data">
+                <div class="icon">⏳</div>
+                Waiting for first validation epoch to complete...<br>
+                Comparison images will appear here automatically.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Chart setup ─────────────────────────────────────────────
+        const chartDefaults = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#8b8fa3', font: { family: 'Inter', size: 12 }, usePointStyle: true, pointStyle: 'circle' } }
+            },
+            scales: {
+                x: { ticks: { color: '#565a6e', font: { size: 11 } }, grid: { color: 'rgba(42,45,58,0.5)' } },
+                y: { ticks: { color: '#565a6e', font: { size: 11 } }, grid: { color: 'rgba(42,45,58,0.5)' }, beginAtZero: false }
+            }
+        };
+
+        const lossChart = new Chart(document.getElementById('lossChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Train Loss', data: [], borderColor: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.1)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3 },
+                    { label: 'Val Loss', data: [], borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.1)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3 }
+                ]
+            },
+            options: chartDefaults
+        });
+
+        const componentChart = new Chart(document.getElementById('componentChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Classifier', data: [], borderColor: '#4e8cff', borderWidth: 2, tension: 0.3, pointRadius: 2 },
+                    { label: 'Box Reg', data: [], borderColor: '#f87171', borderWidth: 2, tension: 0.3, pointRadius: 2 },
+                    { label: 'Mask', data: [], borderColor: '#34d399', borderWidth: 2, tension: 0.3, pointRadius: 2 },
+                    { label: 'Objectness', data: [], borderColor: '#a78bfa', borderWidth: 2, tension: 0.3, pointRadius: 2 },
+                    { label: 'RPN Box', data: [], borderColor: '#22d3ee', borderWidth: 2, tension: 0.3, pointRadius: 2 }
+                ]
+            },
+            options: chartDefaults
+        });
+
+        // ── State ───────────────────────────────────────────────────
+        let lastEpoch = -1;
+        let lastComparisonEpoch = -1;
+
+        // ── Fetch and update ────────────────────────────────────────
+        async function refresh() {
+            try {
+                const res = await fetch('metrics.json?_=' + Date.now());
+                if (!res.ok) throw new Error('No data yet');
+                const data = await res.json();
+
+                if (!data.epochs || data.epochs.length === 0) {
+                    document.getElementById('statusText').textContent = 'Waiting for first epoch...';
+                    return;
+                }
+
+                const epochs = data.epochs;
+                const latest = epochs[epochs.length - 1];
+                const prev = epochs.length > 1 ? epochs[epochs.length - 2] : null;
+
+                // Status
+                document.getElementById('statusText').textContent =
+                    `Epoch ${latest.epoch}/${data.total_epochs || '?'} · Updated ${new Date().toLocaleTimeString()}`;
+
+                // Metrics
+                document.getElementById('metricEpoch').textContent = latest.epoch;
+                document.getElementById('metricEpochSub').textContent = `of ${data.total_epochs || '?'}`;
+                document.getElementById('metricTrainLoss').textContent = latest.train_loss.toFixed(4);
+                document.getElementById('metricValLoss').textContent =
+                    latest.val_loss !== null ? latest.val_loss.toFixed(4) : '—';
+                document.getElementById('metricLR').textContent = latest.lr ? latest.lr.toExponential(2) : '—';
+
+                // Deltas
+                if (prev) {
+                    const trainDelta = latest.train_loss - prev.train_loss;
+                    document.getElementById('metricTrainDelta').textContent =
+                        `${trainDelta >= 0 ? '▲' : '▼'} ${Math.abs(trainDelta).toFixed(4)}`;
+                    if (latest.val_loss !== null && prev.val_loss !== null) {
+                        const valDelta = latest.val_loss - prev.val_loss;
+                        document.getElementById('metricValDelta').textContent =
+                            `${valDelta >= 0 ? '▲' : '▼'} ${Math.abs(valDelta).toFixed(4)}`;
+                    }
+                }
+
+                // Best loss
+                const bestEntry = epochs.reduce((best, e) => {
+                    const loss = e.val_loss !== null ? e.val_loss : e.train_loss;
+                    const bestLoss = best.val_loss !== null ? best.val_loss : best.train_loss;
+                    return loss < bestLoss ? e : best;
+                });
+                const bestLoss = bestEntry.val_loss !== null ? bestEntry.val_loss : bestEntry.train_loss;
+                document.getElementById('metricBestLoss').textContent = bestLoss.toFixed(4);
+                document.getElementById('metricBestEpoch').textContent = `@ epoch ${bestEntry.epoch}`;
+
+                // Loss chart
+                lossChart.data.labels = epochs.map(e => e.epoch);
+                lossChart.data.datasets[0].data = epochs.map(e => e.train_loss);
+                lossChart.data.datasets[1].data = epochs.map(e => e.val_loss);
+                lossChart.update('none');
+
+                // Component chart
+                const compKeys = ['loss_classifier', 'loss_box_reg', 'loss_mask', 'loss_objectness', 'loss_rpn_box_reg'];
+                componentChart.data.labels = epochs.map(e => e.epoch);
+                compKeys.forEach((key, idx) => {
+                    componentChart.data.datasets[idx].data = epochs.map(e =>
+                        e.component_losses ? (e.component_losses[key] || null) : null
+                    );
+                });
+                componentChart.update('none');
+
+                // Comparisons — find latest epoch with comparisons
+                await refreshComparisons(latest.epoch);
+
+            } catch (err) {
+                document.getElementById('statusText').textContent = 'Waiting for training to start...';
+            }
+        }
+
+        async function refreshComparisons(currentEpoch) {
+            // Scan backward from current epoch to find available comparisons
+            for (let ep = currentEpoch; ep >= 1; ep--) {
+                try {
+                    const testUrl = `comparisons/epoch_${ep}_img_0.png?_=${Date.now()}`;
+                    const res = await fetch(testUrl, { method: 'HEAD' });
+                    if (res.ok) {
+                        if (ep !== lastComparisonEpoch) {
+                            lastComparisonEpoch = ep;
+                            renderComparisons(ep);
+                        }
+                        return;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function renderComparisons(epoch) {
+            document.getElementById('compEpochBadge').textContent = `Epoch ${epoch}`;
+            const grid = document.getElementById('comparisonsGrid');
+            grid.innerHTML = '';
+
+            for (let i = 0; i < 5; i++) {
+                const card = document.createElement('div');
+                card.className = 'comparison-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span>Sample ${i + 1}</span>
+                        <span style="color: var(--text-muted);">Epoch ${epoch}</span>
+                    </div>
+                    <img src="comparisons/epoch_${epoch}_img_${i}.png?_=${Date.now()}"
+                         alt="GT vs Pred — Sample ${i + 1}"
+                         onerror="this.parentElement.style.display='none'">
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        // ── Auto-refresh ────────────────────────────────────────────
+        refresh();
+        setInterval(refresh, 10000);
+    </script>
+</body>
+</html>

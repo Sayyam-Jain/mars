@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
-from torchvision.models.detection import maskrcnn_resnet50_fpn
+from torchvision.models.detection import maskrcnn_resnet50_fpn, MaskRCNN_ResNet50_FPN_Weights
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
 class QuadtreeAttention(nn.Module):
@@ -149,14 +149,18 @@ class MARSModel(nn.Module):
         self.use_mask_transfiner = use_mask_transfiner
 
         if backbone_name == 'resnet50':
-            backbone = torchvision.models.resnet50(pretrained=pretrained)
+            weights = torchvision.models.ResNet50_Weights.DEFAULT if pretrained else None
+            backbone = torchvision.models.resnet50(weights=weights)
             self.backbone = nn.Sequential(*list(backbone.children())[:-2])
             backbone_out_channels = 2048
 
         elif backbone_name == 'maskrcnn':
-            model = maskrcnn_resnet50_fpn(pretrained=pretrained)
+            weights = MaskRCNN_ResNet50_FPN_Weights.DEFAULT if pretrained else None
+            model = maskrcnn_resnet50_fpn(weights=weights)
             in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-            model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask, num_classes)
+            # print("INF", in_features_mask, "NUM CLASSES", num_classes)
+            # MaskRCNNPredictor requires (in_channels, dim_reduced, num_classes)
+            model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask, 256, num_classes)
             self.backbone = model.backbone
             backbone_out_channels = 256
 

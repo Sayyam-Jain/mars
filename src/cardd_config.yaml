@@ -1,0 +1,79 @@
+# Project: MARS - Mask Attention Refinement with Sequential Quadtree Nodes
+# Description: Configuration file for training MARS on the CarDD dataset.
+#              This config uses COCO-format annotations and the MaskRCNN backbone.
+# License: MIT License
+
+# ============================================================
+# Dataset Configuration
+# ============================================================
+
+# CarDD COCO dataset paths (adjust these to match your directory structure)
+dataset:
+  train_images: "/app/dataset/CarDD_COCO/train2017"
+  val_images: "/app/dataset/CarDD_COCO/val2017"
+  test_images: "/app/dataset/CarDD_COCO/test2017"
+  train_annotations: "/app/dataset/CarDD_COCO/annotations/instances_train2017.json"
+  val_annotations: "/app/dataset/CarDD_COCO/annotations/instances_val2017.json"
+  test_annotations: "/app/dataset/CarDD_COCO/annotations/instances_test2017.json"
+
+# CarDD damage categories:
+#   1: dent
+#   2: scratch
+#   3: crack
+#   4: glass shatter
+#   5: lamp broken
+#   6: tire flat
+# +1 for background class (class 0, implicit in Mask R-CNN)
+num_classes: 7
+
+# ============================================================
+# Model Configuration
+# ============================================================
+
+# Backbone: 'maskrcnn' activates the full Mask R-CNN detection pipeline in MARSModel
+backbone_name: "maskrcnn"
+pretrained: true
+
+# MARS-specific enhancements
+use_quadtree_attention: true
+use_mask_transfiner: true  # Set to true to enable mask refinement module
+
+# ============================================================
+# Training Hyperparameters
+# ============================================================
+
+input_size: 800       # Mask R-CNN typically uses larger inputs (800px short side)
+batch_size: 8         # Mask R-CNN is memory-intensive; use small batch size
+learning_rate: 0.005  # SGD lr for detection (higher than classification)
+weight_decay: 0.0005
+momentum: 0.9
+epochs: 3000
+
+# Optimizer: SGD with momentum (standard for Mask R-CNN training)
+optimizer:
+  type: "SGD"
+  momentum: 0.9
+  weight_decay: 0.0005
+
+# Learning rate scheduler
+scheduler:
+  type: "StepLR"
+  step_size: 10
+  gamma: 0.1
+
+# ============================================================
+# Data Augmentation
+# ============================================================
+
+augmentation:
+  horizontal_flip: true
+  vertical_flip: false
+
+# ============================================================
+# Output & Logging
+# ============================================================
+
+checkpoint_dir: "./checkpoints"
+checkpoint_name: "mars_cardd_best_model.pth"
+log_interval: 10       # Print training status every N batches
+save_every_epoch: 5     # Save checkpoint every N epochs

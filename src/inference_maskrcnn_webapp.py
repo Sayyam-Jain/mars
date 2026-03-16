@@ -19,7 +19,9 @@ import matplotlib.patches as mpatches
 from PIL import Image
 from torchvision import transforms as T
 from flask import Flask, request, jsonify, render_template
-
+torch.use_deterministic_algorithms(True, warn_only=True)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 # Add src directory to path so we can import models
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
@@ -34,8 +36,8 @@ from models import MARSModel
 PORT = 8085
 SCORE_THRESHOLD = 0.3
 # CHECKPOINT_PATH = os.path.join(SCRIPT_DIR, 'checkpoints', 'mars_cardd_best_model.pth')
-# CHECKPOINT_PATH = '/app/checkpoints/mars_cardd_epoch40.pth'
-CHECKPOINT_PATH = '/app/checkpoints/mars_cardd_best_model.pth'
+CHECKPOINT_PATH = '/app/checkpoints/mars_cardd_epoch40.pth'
+# CHECKPOINT_PATH = '/app/checkpoints/mars_cardd_best_model.pth'
 # CarDD damage categories (matching train_cardd.py)
 CATEGORY_COLORS = {
     1: ('#FF6B6B', 'dent'),
